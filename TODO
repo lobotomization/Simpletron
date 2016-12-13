@@ -1,0 +1,19 @@
+Create a 'mini-compiler' which parses an arithmetic expression into simpletron code.
+Extend the mini-compiler to work with variables, substituting the variable names for appropriate memory locations.
+Extend the mini-compiler to compile boolean expressions, such as x == y and x > y, into simpletron code.
+
+Create a two-sweep compiler for the simpletron
+  The first sweep locates the line-numbers, variables, and constants. These are placed in a symbol table at the start of the memory.
+  The second sweep can now compile the code and insert memory addresses where variables, line-numbers and constants used to be.
+
+Organize the simpletron code better
+Add some new features to the simpletron:
+  Core dump (Memory dump)
+  Error checking
+  Larger program memory (simple)
+  Create modulo (remainder) instruction
+  Create power (exponentiation) instruction
+  Create newline instruction
+  Create floating point handling instructions
+  Create string handling instructions
+  
