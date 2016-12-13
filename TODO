@@ -15,3 +15,4 @@
  ○ Create newline instruction
  ○ Create floating point handling instructions
  ○ Create string handling instructions
+ ○ Add support for disk reads and writes
