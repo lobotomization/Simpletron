@@ -8,7 +8,6 @@
 
 • Organize the simpletron code better
 • Add some new features to the simpletron:
- ○ Core dump (Memory dump)
  ○ Error checking
  ○ Larger program memory (simple)
  ○ Create modulo (remainder) instruction
