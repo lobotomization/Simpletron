@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "simplecode.h"
 //A stack of strings is used to help parse the arithmetic.
 //Top stores the number of items on the stack
 typedef struct stringstack {
@@ -45,6 +46,9 @@ StkPtr shunt(char *math);
 int precedence(char *token);
 assoc_t assoc(char *token);
 char *readToken(char **math);
+
+int operatorToSimplecode(char a);
+void RPNToSimplecode(StkPtr st);
 int main()
 {
     /*
@@ -75,14 +79,75 @@ int main()
         if(strcmp(input, "quit") == 0)
             break;
         arithStack = shunt(input);
-        if(arithStack)
+        if(arithStack){
             sol = parseRPN(arithStack);
+            RPNToSimplecode(arithStack);
+        }
         if(sol)
             printf("%ld\n", *sol);
     }while(1);
 	return 0;
 }
+void RPNToSimplecode(StkPtr st){
+    StkPtr tmp = newStk();
+    long a, b, c, indexLabel = 1, *out;
+    char *a_st, *b_st, *stackValues[st->top];
 
+    for(int i = 0; i < st->top; i++){   //Replace the stack values with memory index labels
+        if(isdigit(**(st->stack + i))){
+            stackValues[indexLabel - 1] = (char *)malloc(strlen(*(st->stack + i)));
+            strcpy(stackValues[indexLabel - 1], *(st->stack + i));
+            strcpy(*(st->stack + i), longToString(indexLabel));
+            indexLabel++;
+        }
+    }
+
+    printf("{%02d%02d, ", BRANCH, (int)indexLabel); //Top of code. Branch instruction
+    for(int i = 0; i < indexLabel-1; i++){    //Working stack
+            printf("%s, ", stackValues[i]);
+    }
+    for(int i = 0; i < st->top; i++){
+        if(isdigit(**(st->stack + i))){
+            push(tmp, *(st->stack + i));
+        }
+        else{
+            b_st = pop(tmp);   //Pop the strings backwards since this
+            a_st = pop(tmp);  //is how they're stored on the stack
+            if(a_st == NULL || b_st == NULL){
+                printf("Inappropriate number of parameters!\n");
+                break;
+            }
+            b = strtol(b_st, NULL, 10);
+            a = strtol(a_st, NULL, 10);
+            //Store value in address a in accumulator
+            printf("%02d%02d, ", LOAD, (int)a);
+            //Perform a (operator) b and store it in the accumulator
+            printf("%02d%02d, ", operatorToSimplecode(**(st->stack + i)), (int)b);
+            //Store the result back into address a
+            printf("%02d%02d, ", STORE, (int)a);
+            //Put the address being stored into back on the address stack
+            push(tmp, a_st);
+        }
+    }
+    printf("%02d%02d, %02d%02d}\n", WRITE, (int)a, HALT, 0); //Display result and finish
+}
+int operatorToSimplecode(char a){
+    switch(a){
+    case '+':
+        return 30;
+    case '-':
+        return 31;
+    case '/':
+        return 32;
+    case '*':
+        return 33;
+    /*case '^':
+        return 34;*/ //Not yet supported by simpletron
+    default:
+        printf("Bad symbol %c detected during parse!\n", a);
+        return 0;
+    }
+}
 long *parseRPN(StkPtr st){
     StkPtr tmp = newStk();
     long a, b, c, *out;

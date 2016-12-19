@@ -18,24 +18,28 @@ main()
 											              //18                          //24                          //30
 //	int memory[100] = {4007,0,7,0,0,1,4300,1002,2002,4206,1004,2004,2103,2001,3005,2101,3102,4230,1004,2004,3103,4124,2004,2103,2001,3005,2101,3102,4230,4018,1103,4300};
 //	int memory[100] = {1009, 1010, 2009, 3110, 4107, 1109, 4300, 1110, 4300, 0000, 0000};
-	int memory[100] = {0};
+//  (1+2)-(24/3)*5 done by me
+//	int memory[100] = {4006, 1, 2, 24, 3, 5, 2003, 3204, 3305, 2103, 2001, 3002, 3103, 2101, 1101};
+//  (1+2)-(24/3)*5 done by my own mini-compiler (schwwwweeeettt!)
+	int memory[100] = {4006, 1, 2, 24, 3, 5, 2001, 3002, 2101, 2003, 3204, 2103, 2003, 3305, 2103, 2001, 3103, 2101, 1101, 4300};
+//	int memory[100] = {0};
 	printf("***          Welcome to Simpletron!               ***\n");
-	printf("***   Please enter your program one instruction   ***\n"); 
+	printf("***   Please enter your program one instruction   ***\n");
 	printf("***   (or data word) at a time. I will type the   ***\n");
-        printf("***   location number and a colon. You then type  ***\n");
-        printf("*** the word for that location. Type the sentinel ***\n");
-        printf("***     -99999 to stop entering your program      ***\n");	
+    printf("***   location number and a colon. You then type  ***\n");
+    printf("*** the word for that location. Type the sentinel ***\n");
+    printf("***     -99999 to stop entering your program      ***\n");
 	int instruction, memLocation = 0;
 	do
 	{
-		printf("%02d: ",memLocation);
-		scanf("%d",&instruction);
+		printf("%02d: ", memLocation);
+		scanf("%d", &instruction);
 		if(instruction == -99999)
 		break;
 		if(instruction < -9999||instruction > 9999)
-		continue;	
+		continue;
 		memory[memLocation] = instruction;
-		memLocation++;	
+		memLocation++;
 	}
 	while(memLocation < 100);
 	printf("*** Program loading completed ***\n");
@@ -181,7 +185,7 @@ void interpreter(int *memory)
 			printf("Errorneous instruction %02d issued from memory index %02d, program halted.\n", fetchedInstruction, currentIndex);
 			fetchedInstruction = HALT;
 			break;
-		}		
+		}
 	}
 	while(fetchedInstruction != HALT);
 	dump(memory, accumulator, currentIndex);
