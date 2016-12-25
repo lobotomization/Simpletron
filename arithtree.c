@@ -3,16 +3,12 @@
 #include <string.h>
 #include <ctype.h>
 #include "simplecode.h"
-//A stack of strings is used to help parse the arithmetic.
-//Top stores the number of items on the stack
-typedef struct stringstack {
-	unsigned int top;
-    char **stack;
-} Stk;
-//Give pointers to Stk structs their own type
-typedef Stk *StkPtr;
-//Associativity of functions is given its own type
-typedef enum assoc{left, right} assoc_t;
+#include "stack.h"
+#include "symbols.h"
+#include "arithmetic.h"
+#include "util.h"
+
+
 /*
 * newStk - Returns a pointer to a new stack object
 * pop - Returns the top-most string from the stack after removing it
@@ -33,43 +29,19 @@ typedef enum assoc{left, right} assoc_t;
 * assoc - This returns the associativity of an operator (left or right)
 * readToken - This parses the user input into numbers and operators
 */
-StkPtr newStk();
-int push(StkPtr st, char *in);
-char *pop(StkPtr st);
-char *peek(StkPtr st);
+
+void printStack(StkPtr st);
 long compute(long a, long b, char c);
 long power(long a, long b);
 long *parseRPN(StkPtr st);
-char *longToString(long l);
-void printStack(StkPtr st);
-StkPtr shunt(char *math);
-int precedence(char *token);
-assoc_t assoc(char *token);
-char *readToken(char **math);
 
-int operatorToSimplecode(char a);
-void RPNToSimplecode(StkPtr st);
+
+StkPtr copyStack(StkPtr st);
 int main()
 {
+
+    char input[1024] = " 10 rem this is a comment\n 20 input x\n 30 print x\n 40 let y = x*x\n 50 let x = y \n 55 print y\n 60 if y < 10 goto 40\n 70 goto 80\n 80 end";
     /*
-	StkPtr test = newStk();
-    printf("sizeof(test->stack) = %lu\n", sizeof(test->stack));
-
-	push(test, "ayylmao\n");
-	push(test, "lmao\n");
-	printf("Test Stack:\n");
-	printStack(test);
-    printf("sizeof(char*) = %lu\n", sizeof(char*));
-    printf("sizeof(test->stack) = %lu\n", sizeof(test->stack));
-	printf("Am I an alien?\n%s", pop(test));
-	char *math = "(123+456)*(789-42)/98";
-	printf("Math: %s\n", math);
-    StkPtr out = shunt(math);
-    printf("Output stack:\n");
-    printStack(out);
-    printf("This expression equals %lu\n", parseRPN(out));*/
-
-    char input[1024];
     StkPtr arithStack;
     long *sol;
     printf("Interactive Math Solver\n");
@@ -82,33 +54,74 @@ int main()
         if(arithStack){
             sol = parseRPN(arithStack);
             RPNToSimplecode(arithStack);
+            printStack(arithStack);
+
         }
         if(sol)
-            printf("%ld\n", *sol);
-    }while(1);
+        printf("%ld\n", *sol);
+
+    }while(1);*/
+    printf("%s\n\n********* Parsing Code *********\n", input);
+    StkPtr symbolTable = firstPass(input);
+    secondPass(input, symbolTable);
+    printCode(input, symbolTable);
+    if(symbolTable)
+    for(int i = 0; i < symbolTable->top; i++){
+        printf("i = %d\n", i);
+        printf("Symbol: %s\n", ((SymPtr)symbolTable->stack[i])->symbol);
+        printf("Address: %d\n", ((SymPtr)symbolTable->stack[i])->addr);
+        printf("Type: %c\n", ((SymPtr)symbolTable->stack[i])->type);
+    }
 	return 0;
 }
-void RPNToSimplecode(StkPtr st){
-    StkPtr tmp = newStk();
-    long a, b, c, indexLabel = 1, *out;
+
+
+StkPtr copyStack(StkPtr st){
+     char *newPointer;
+     StkPtr newStack = newStk();
+     for(int i = 0; i < st->top; i++){
+        newPointer = (char *)malloc(strlen(st->stack[i]));
+        strcpy(newPointer, st->stack[i]);
+        push(newStack, newPointer);
+     }
+     return newStack;
+}
+
+/*void RPNToSimplecode(StkPtr st){
+    StkPtr tmp = newStk(), cpy = copyStack(st);
+    long a, b, c, indexLabel = 1, *out, numOfSymbols = 0;
     char *a_st, *b_st, *stackValues[st->top];
 
-    for(int i = 0; i < st->top; i++){   //Replace the stack values with memory index labels
-        if(isdigit(**(st->stack + i))){
-            stackValues[indexLabel - 1] = (char *)malloc(strlen(*(st->stack + i)));
-            strcpy(stackValues[indexLabel - 1], *(st->stack + i));
-            strcpy(*(st->stack + i), longToString(indexLabel));
+    StkPtr symbolTable = createSymbolTable(st);
+    if(symbolTable)
+        printf("Number of symbols is %d\n", symbolTable->top);
+    while(numOfSymbols < symbolTable->top){
+        printf("%s\n", ((SymPtr)*(symbolTable->stack+numOfSymbols))->symbol);
+        numOfSymbols++;
+    }
+    printf("Number of symbols is %ld\n", numOfSymbols);
+
+    for(int i = 0; i < cpy->top; i++){   //Replace the stack values with memory index labels
+        //if(isdigit(**(st->stack + i))){
+        if(precedence(*(cpy->stack + i)) == 0){
+            stackValues[indexLabel - 1] = (char *)malloc(strlen(cpy->stack[i]));
+            strcpy(stackValues[indexLabel - 1], cpy->stack[i]);
+            strcpy(cpy->stack[i], longToString(indexLabel));
             indexLabel++;
         }
     }
 
     printf("{%02d%02d, ", BRANCH, (int)indexLabel); //Top of code. Branch instruction
     for(int i = 0; i < indexLabel-1; i++){    //Working stack
-            printf("%s, ", stackValues[i]);
+            if(isdigit(*stackValues[i]))
+                printf("%s, ", stackValues[i]);
+            else
+                printf("0, ");
     }
-    for(int i = 0; i < st->top; i++){
-        if(isdigit(**(st->stack + i))){
-            push(tmp, *(st->stack + i));
+
+    for(int i = 0; i < cpy->top; i++){
+        if(precedence(cpy->stack[i]) == 0){
+            push(tmp, cpy->stack[i]);
         }
         else{
             b_st = pop(tmp);   //Pop the strings backwards since this
@@ -122,7 +135,7 @@ void RPNToSimplecode(StkPtr st){
             //Store value in address a in accumulator
             printf("%02d%02d, ", LOAD, (int)a);
             //Perform a (operator) b and store it in the accumulator
-            printf("%02d%02d, ", operatorToSimplecode(**(st->stack + i)), (int)b);
+            printf("%02d%02d, ", operatorToSimplecode(*(char *)cpy->stack[i]), (int)b);
             //Store the result back into address a
             printf("%02d%02d, ", STORE, (int)a);
             //Put the address being stored into back on the address stack
@@ -130,31 +143,16 @@ void RPNToSimplecode(StkPtr st){
         }
     }
     printf("%02d%02d, %02d%02d}\n", WRITE, (int)a, HALT, 0); //Display result and finish
-}
-int operatorToSimplecode(char a){
-    switch(a){
-    case '+':
-        return 30;
-    case '-':
-        return 31;
-    case '/':
-        return 32;
-    case '*':
-        return 33;
-    /*case '^':
-        return 34;*/ //Not yet supported by simpletron
-    default:
-        printf("Bad symbol %c detected during parse!\n", a);
-        return 0;
-    }
-}
+}*/
+
 long *parseRPN(StkPtr st){
     StkPtr tmp = newStk();
     long a, b, c, *out;
-    char *a_st, *b_st;
+    char *a_st, *b_st, *cur;
     for(int i = 0; i < st->top; i++){
-        if(isdigit(**(st->stack + i))){
-            push(tmp, *(st->stack + i));
+        cur = (char *)*(st->stack + i);
+        if(isdigit(*cur)){
+            push(tmp, cur);
         }
         else{
             b_st = pop(tmp);   //Pop the strings backwards since this
@@ -165,7 +163,7 @@ long *parseRPN(StkPtr st){
             }
             b = strtol(b_st, NULL, 10);
             a = strtol(a_st, NULL, 10);
-            c = compute(a, b, **(st->stack + i));
+            c = compute(a, b, *cur);
             push(tmp, longToString(c));
         }
     }
@@ -177,12 +175,6 @@ long *parseRPN(StkPtr st){
 
 }
 
-char *longToString(long l){
-    const int n = snprintf(NULL, 0, "%ld", l);
-    char *buf = (char *)malloc(n+1);
-    int c = snprintf(buf, n+1, "%ld", l);
-    return buf;
-}
 
 long compute(long a, long b, char c){
     switch(c){
@@ -212,157 +204,6 @@ long power(long a, long b){
     return out;
 }
 
-StkPtr newStk(){
-	StkPtr out = (StkPtr)calloc(1, sizeof(Stk));
-	out->top = 0;
-	return out;
-}
-
-int push(StkPtr st, char *in){
-	st->stack = (char **)realloc(st->stack, (st->top+1)*sizeof(char*));
-	*(st->stack + st->top) = in;
-	st->top++;
-	return st->top;
-}
-
-char *pop(StkPtr st){
-	if(st == NULL || st->top == 0)
-	return NULL;
-	st->top--;
-	char *out = (char *)malloc(strlen(*(st->stack + st->top)));
-	strcpy(out, *(st->stack + st->top));
-	st->stack = (char **)realloc(st->stack, st->top*sizeof(char*));
-	return out;
-}
-
-char *peek(StkPtr st){
-	if(st == NULL || st->top == 0)
-	return NULL;
-	char *out = (char *)malloc(strlen(*(st->stack + st->top - 1)));
-        strcpy(out, *(st->stack + st->top - 1));
-        return out;
-}
-
-void printStack(StkPtr st){
-    if(st == NULL){
-        printf("(null)\n");
-    }
-    else{
-        for(int i = 0; i < st->top; i++){
-            printf("Stack[%d] = %s\n", i, *(st->stack + i));
-        }
-    }
-}
-
-
-StkPtr shunt(char *math){
-	StkPtr output = newStk(), operators = newStk();
-	char *cursor = math, *tmp, *token;
-	while(token = readToken(&cursor)){
-
-		if(isdigit(*token)){
-			push(output, token);
-            continue;
-		}
-
-        if(*token == '('){
-			push(operators, token);
-			continue;
-		}
-
-        if(*token == ')'){
-            while(tmp = pop(operators)){
-                if(*tmp == '(')
-                    break;
-                push(output, tmp);
-            }
-            if(tmp == NULL){
-                printf("Close bracket without open bracket!\n");
-                return NULL;
-            }
-            continue;
-        }
-
-        /*
-        *   The following if statement should
-        *   only be running if *token != ')'
-        *   and *token != '('
-        *   This is only being implicitly enforced
-        *   due to the above if statements and their
-        *   continue clauses.
-        */
-        //  Precedence of 0 means a bad token was given.
-		if(!isdigit(*token) && precedence(token)){
-
-            if(assoc(token) == left)
-			while(peek(operators) != NULL && precedence(token) <= precedence(peek(operators))){
-				push(output, pop(operators));
-			}
-
-            if(assoc(token) == right)
-			while(peek(operators) != NULL && precedence(token) < precedence(peek(operators))){
-				push(output, pop(operators));
-			}
-
-            push(operators, token);
-            continue;
-		}
 
 
 
-		else
-		{
-			printf("Bad input!\n");
-			printf("Token not recognized: %s\n", token);
-			return NULL;
-		}
-	}
-
-	while(tmp = pop(operators)){
-		if(*tmp == '(' || *tmp == ')'){
-			printf("Mismatched parentheses!\n");
-			return NULL;
-		}
-		push(output, tmp);
-	}
-	return output;
-
-}
-int precedence(char *token){
-	switch(*token){
-		case '+': case '-':
-		return 1;
-		case '*': case '/':
-		return 2;
-		case '^':
-		return 3;
-		default:
-        return 0;
-	}
-}
-
-assoc_t assoc(char *token){
-	if(*token == '^')
-	return right;
-	return left;
-}
-char *readToken(char **math){
-	if(math == NULL || **math == '\0')
-	return NULL;
-	char *cursor = (char *)malloc(strlen(*math));
-	char *base = cursor;
-	if(!isdigit(**math)){
-		*cursor = **math;
-		cursor++;
-		(*math)++;
-		*cursor = '\0';
-		return base;
-	}
-	while(isdigit(**math)){
-		*cursor = **math;
-		cursor++;
-		(*math)++;
-	}
-	*cursor = '\0';
-	return base;
-}
