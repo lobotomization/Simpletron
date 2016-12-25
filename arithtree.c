@@ -85,32 +85,18 @@ int main()
       120 let y = y+1 \n\
       130 if y > p goto 150 \n\
       140 goto 40 \n\
-      150 if d > 2 goto 170 \n\
-      155 if d < 2 goto 170 \n\
+      150 if d != 2 goto 170 \n\
       160 print p \n\
       170 if p < 75 goto 25 \n\
       180 end ";
-
-    /*
-    StkPtr arithStack;
-    long *sol;
-    printf("Interactive Math Solver\n");
-    do{
-        printf("M> ");
-        scanf("%s", input);
-        if(strcmp(input, "quit") == 0)
-            break;
-        arithStack = shunt(input);
-        if(arithStack){
-            sol = parseRPN(arithStack);
-            RPNToSimplecode(arithStack);
-            printStack(arithStack);
-
-        }
-        if(sol)
-        printf("%ld\n", *sol);
-
-    }while(1);*/
+    //char input[1024] =\
+    "   10 rem Testing the != functionality \n\
+        20 let p = 1 \n\
+        30 let q = 2 \n\
+        40 if p != q goto 60 \n\
+        50 print p \n\
+        60 print q \n\
+        70 end ";
     printf("%s\n\n********* Parsing Code *********\n", input);
     StkPtr symbolTable = firstPass(input);
     secondPass(input, symbolTable);

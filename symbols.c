@@ -144,7 +144,7 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
     int offset = getHighestAddress(symbols) + 1;
     strcpy(codeCopy, inputCode);
     curLine = strtok_r(codeCopy, "\n", &nextLine);
-    lineNum = strtok(curLine, " ");
+    lineNum = strtok(curLine, " "); //Functionify this section and the next as well
     instruction = strtok(NULL, " ");
     updateSymbol(symbols, lineNum, 'l', offset);
     if(!strcmp(instruction, "goto")||!strcmp(instruction, "print")||!strcmp(instruction, "input")||!strcmp(instruction, "end")){
@@ -158,7 +158,6 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
         offset += 2; //A load and a store operation are necessary at least
     }
     if(!strcmp(instruction, "if")){
-        token = strtok(NULL, " ");
         leftMath = strtok(NULL, " ");
         op = strtok(NULL, " ");
         rightMath = strtok(NULL, " ");
@@ -168,6 +167,9 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
         offset += 1; //Plus one for the branch instruction
         if(strcmp(op, "<=")==0||strcmp(op, ">=")==0){
             offset+=1; //An extra branch instruction is needed for these
+        }
+        if(strcmp(op, "!=")==0){
+            offset+=3; // x!=y is the same as x>y OR x<y, so an extra three instructions
         }
     }
 
@@ -188,7 +190,6 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
             offset += 2; //A load and a store operation are necessary at least
         }
         if(!strcmp(instruction, "if")){
-            token = strtok(NULL, " ");
             leftMath = strtok(NULL, " ");
             op = strtok(NULL, " ");
             rightMath = strtok(NULL, " ");
@@ -198,6 +199,9 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
             offset += 1; //Plus one for the branch instruction
             if(strcmp(op, "<=")==0||strcmp(op, ">=")==0){
                 offset+=1; //An extra branch instruction is needed for these
+            }
+            if(strcmp(op, "!=")==0){
+                offset+=3; // x!=y is the same as x>y OR x<y, so an extra three instructions
             }
         }
     }
@@ -450,7 +454,7 @@ StkPtr parseLine(char *line, StkPtr symbols){
         leftMath = strtok(NULL, " ");
         if(leftMath){
             op = strtok(NULL, " ");
-            if(op && (!strcmp(op, "==")||!strcmp(op, ">=")||!strcmp(op, "<=")||!strcmp(op, ">")||!strcmp(op, "<")) ){ //!strcmp actually means the strings are equal
+            if(op && (!strcmp(op, "==")||!strcmp(op, ">=")||!strcmp(op, "<=")||!strcmp(op, ">")||!strcmp(op, "<")||!strcmp(op, "!=")) ){ //!strcmp actually means the strings are equal
                 rightMath = strtok(NULL, " ");
                 if(rightMath){
                     token = strtok(NULL, " ");  //This is a "goto" token
@@ -725,7 +729,7 @@ void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath,
         }
     }
 
-    if(!strcmp(op, "=")){
+    if(!strcmp(op, "=")){ //Functionify this section and the next, the same function is used three times
         for(int i = 0; i < rightStk->top; i++){
             if(precedence(rightStk->stack[i]) == 0){
                 push(tmp, rightStk->stack[i]);
@@ -877,6 +881,14 @@ void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath,
     if(!strcmp(op, "<")){
         printf("%02d%02d, ", LOAD, (int)leftAddressNum);
         printf("%02d%02d, ", SUBTRACT, (int)rightAddressNum);
+        printf("%02d%02d, ", BRANCHNEG, (int)branchNum);
+    }
+    if(!strcmp(op, "!=")){
+        printf("%02d%02d, ", LOAD, (int)leftAddressNum);
+        printf("%02d%02d, ", SUBTRACT, (int)rightAddressNum);
+        printf("%02d%02d, ", BRANCHNEG, (int)branchNum);
+        printf("%02d%02d, ", LOAD, (int)rightAddressNum);
+        printf("%02d%02d, ", SUBTRACT, (int)leftAddressNum);
         printf("%02d%02d, ", BRANCHNEG, (int)branchNum);
     }
 /*
