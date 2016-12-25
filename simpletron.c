@@ -11,6 +11,10 @@
 #define BRANCHNEG 41 //Branches to location ## if accumulator < 0
 #define BRANCHZERO 42 //Branches to location ## if accumulator = 0
 #define HALT 43 //Ends program execution
+#define DEBUG 0
+#define debug(fmt, ...) \
+            do { if (DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+
 void interpreter(int *memory);
 void dump(int *memory, int accumulator, int currentIndex);
 main()
@@ -21,8 +25,10 @@ main()
 //  (1+2)-(24/3)*5 done by me
 //	int memory[100] = {4006, 1, 2, 24, 3, 5, 2003, 3204, 3305, 2103, 2001, 3002, 3103, 2101, 1101};
 //  (1+2)-(24/3)*5 done by my own mini-compiler (schwwwweeeettt!)
-	int memory[100] = {4006, 1, 2, 24, 3, 5, 2001, 3002, 2101, 2003, 3204, 2103, 2003, 3305, 2103, 2001, 3103, 2101, 1101, 4300};
+//	int memory[100] = {4006, 1, 2, 24, 3, 5, 2001, 3002, 2101, 2003, 3204, 2103, 2003, 3305, 2103, 2001, 3103, 2101, 1101, 4300};
 //	int memory[100] = {0};
+    int memory[100] = {4007, 0, 0, 1, 0, 0, 0, 1001, 2003, 2102, 2001, 3202, 2149, 2049, 2104, 2004, 3302, 2149, 2001, 3149, 2149, 2049, 2105, 2006, 3105, 4129, 2006, 3105, 4238, 2002, 3003, 2149, 2049, 2102, 2001, 3102, 4148, 4010, 1102, 2002, 3003, 2149, 2049, 2102, 2001, 3102, 4148, 4010, 4300, 0};
+
 	printf("***          Welcome to Simpletron!               ***\n");
 	printf("***   Please enter your program one instruction   ***\n");
 	printf("***   (or data word) at a time. I will type the   ***\n");
@@ -66,17 +72,17 @@ void interpreter(int *memory)
 			currentIndex++;
 			break;
 			case LOAD:
-			printf("Memory location %02d, containing the number %d, has been stored in the accumulator\n",fetchedAddress,memory[fetchedAddress]);
+			debug("Memory location %02d, containing the number %d, has been stored in the accumulator\n",fetchedAddress,memory[fetchedAddress]);
 			accumulator = memory[fetchedAddress];
 			currentIndex++;
 			break;
 			case STORE:
-			printf("Memory location %02d now contains %d, the value of the accumulator\n",fetchedAddress,accumulator);
+			debug("Memory location %02d now contains %d, the value of the accumulator\n",fetchedAddress,accumulator);
 			memory[fetchedAddress] = accumulator;
 			currentIndex++;
 			break;
 			case ADD:
-			printf("Memory location %02d, containing the number %d, has been added to the accumulator\n",fetchedAddress,memory[fetchedAddress]);
+			debug("Memory location %02d, containing the number %d, has been added to the accumulator\n",fetchedAddress,memory[fetchedAddress]);
 			accumulator += memory[fetchedAddress];
 			if(accumulator>9999)
 			{
@@ -92,11 +98,11 @@ void interpreter(int *memory)
 				fetchedInstruction = HALT;
 				break;
 			}
-			printf("Current value of the accumulator: %d\n",accumulator);
+			debug("Current value of the accumulator: %d\n",accumulator);
 			currentIndex++;
 			break;
 			case SUBTRACT:
-			printf("Memory location %02d, containing the number %d, has been subtracted from the accumulator\n",fetchedAddress,memory[fetchedAddress]);
+			debug("Memory location %02d, containing the number %d, has been subtracted from the accumulator\n",fetchedAddress,memory[fetchedAddress]);
 			accumulator -= memory[fetchedAddress];
 			if(accumulator>9999)
 			{
@@ -112,11 +118,11 @@ void interpreter(int *memory)
 				fetchedInstruction = HALT;
 				break;
 			}
-			printf("Current value of the accumulator: %d\n",accumulator);
+			debug("Current value of the accumulator: %d\n",accumulator);
 			currentIndex++;
 			break;
 			case DIVIDE:
-			printf("Memory location %02d, containing the number %d, has been divided into the accumulator\n",fetchedAddress,memory[fetchedAddress]);
+			debug("Memory location %02d, containing the number %d, has been divided into the accumulator\n",fetchedAddress,memory[fetchedAddress]);
 			if(memory[fetchedAddress]==0)
 			{
 				printf("Divide by zero error issued by memory index %02d, program halted.", currentIndex);
@@ -136,11 +142,11 @@ void interpreter(int *memory)
 				fetchedInstruction = HALT;
 				break;
 			}
-			printf("Current value of the accumulator: %d\n",accumulator);
+			debug("Current value of the accumulator: %d\n",accumulator);
 			currentIndex++;
 			break;
 			case MULTIPLY:
-			printf("Memory location %02d, containing the number %d, has been multiplied into the accumulator\n",fetchedAddress,memory[fetchedAddress]);
+			debug("Memory location %02d, containing the number %d, has been multiplied into the accumulator\n",fetchedAddress,memory[fetchedAddress]);
 			accumulator *= memory[fetchedAddress];
 			if(accumulator>9999)
 			{
@@ -156,24 +162,24 @@ void interpreter(int *memory)
 				fetchedInstruction = HALT;
 				break;
 			}
-			printf("Current value of the accumulator: %d\n",accumulator);
+			debug("Current value of the accumulator: %d\n",accumulator);
 			currentIndex++;
 			break;
 			case BRANCH:
-			printf("Branching to index %02d\n",fetchedAddress);
+			debug("Branching to index %02d\n",fetchedAddress);
 			currentIndex = fetchedAddress;
 			break;
 			case BRANCHNEG:
-			printf("Branching to index %02d if the accumulator is negative\n", fetchedAddress);
-			printf("Current value of the accumulator: %d\n",accumulator);
+			debug("Branching to index %02d if the accumulator is negative\n", fetchedAddress);
+			debug("Current value of the accumulator: %d\n",accumulator);
 			if(accumulator<0)
 			currentIndex = fetchedAddress;
 			else
 			currentIndex++;
 			break;
 			case BRANCHZERO:
-			printf("Branching to index %02d if the accumulator is zero\n", fetchedAddress);
-			printf("Current value of the accumulator: %d\n", accumulator);
+			debug("Branching to index %02d if the accumulator is zero\n", fetchedAddress);
+			debug("Current value of the accumulator: %d\n", accumulator);
 			if(accumulator==0)
 			currentIndex = fetchedAddress;
 			else
@@ -182,7 +188,7 @@ void interpreter(int *memory)
 			case HALT:
 			break;
 			default:
-			printf("Errorneous instruction %02d issued from memory index %02d, program halted.\n", fetchedInstruction, currentIndex);
+			printf("Erroneous instruction %02d issued from memory index %02d, program halted.\n", fetchedInstruction, currentIndex);
 			fetchedInstruction = HALT;
 			break;
 		}

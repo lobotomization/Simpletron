@@ -1,4 +1,4 @@
-#include <stdio.h>
+/*#include <stdio.h>
 #include <string.h>
 int translateCode(char *command);
 main()
@@ -26,4 +26,4 @@ int translateCode(char *command)
 	return 40;
 	else
 	return 0;
-}
+}*/

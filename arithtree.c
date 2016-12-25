@@ -40,7 +40,25 @@ StkPtr copyStack(StkPtr st);
 int main()
 {
 
-    char input[1024] = " 10 rem this is a comment\n 20 input x\n 30 print x\n 40 let y = x*x\n 50 let x = y \n 55 print y\n 60 if y < 10 goto 40\n 70 goto 80\n 80 end";
+    //char input[1024] = " 10 rem this is a comment\n 20 input x\n 30 print x\n 40 let y = x*x\n 50 let x = y \n 55 print y\n 60 if y < 10 goto 40\n 70 goto 80\n 80 end";
+    //char input[1024] = " 10 rem This calculates x mod y\n 20 input x\n 30 input y\n 40 let z = x/y\n 50 let r = (x-z*y) \n 55 print r\n 60 end";
+    char input[1024] =\
+    " 10 rem This calculates the divisors of x\n\
+    20 input x \n\
+    30 let y = 1 \n\
+    40 let z = x/y \n\
+    50 let r = (x-z*y) \n\
+    60 if r > 0 goto 80 \n\
+    70 if r == 0 goto 110 \n\
+    80 let y = y+1 \n\
+    90 if y > x goto 150 \n\
+    100 goto 40 \n\
+    110 print y \n\
+    120 let y = y+1 \n\
+    130 if y > x goto 150 \n\
+    140 goto 40 \n\
+    150 end ";
+
     /*
     StkPtr arithStack;
     long *sol;

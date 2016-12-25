@@ -164,7 +164,7 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
         rightMath = strtok(NULL, " ");
         offset += 3*countOperators(leftMath); //There are 3 assembly instructions for each arithmetic operator
         offset += 3*countOperators(rightMath);
-        offset += 3; //Plus three for the final difference of the left and right
+        offset += 2; //Plus two for the final difference of the left and right
         offset += 1; //Plus one for the branch instruction
         if(strcmp(op, "<=")==0||strcmp(op, ">=")==0){
             offset+=1; //An extra branch instruction is needed for these
@@ -194,7 +194,7 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
             rightMath = strtok(NULL, " ");
             offset += 3*countOperators(leftMath); //There are 3 assembly instructions for each arithmetic operator
             offset += 3*countOperators(rightMath);
-            offset += 3; //Plus three for the final difference of the left and right
+            offset += 2; //Plus two for the final difference of the left and right
             offset += 1; //Plus one for the branch instruction
             if(strcmp(op, "<=")==0||strcmp(op, ">=")==0){
                 offset+=1; //An extra branch instruction is needed for these
