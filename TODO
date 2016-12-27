@@ -1,10 +1,14 @@
-• Organize the simpletron code better
 • Add some new features to the simpletron:
  ○ Error checking
  ○ Larger program memory (Instruction size may have to be expanded to deal with larger memory)
  ○ Create modulo (remainder) instruction
- ○ Create power (exponentiation) instruction
  ○ Create newline instruction
  ○ Create floating point handling instructions
  ○ Create string handling instructions
  ○ Add support for disk reads and writes
+
+• Rename arithtree to scc:
+ ○ Have scc work like gcc and read Simple code from a file
+ ○ Have scc write Simple bytecode to a file
+ 
+• Allow simpletron to run bytecode from files
