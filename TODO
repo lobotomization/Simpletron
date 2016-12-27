@@ -6,9 +6,3 @@
  ○ Create floating point handling instructions
  ○ Create string handling instructions
  ○ Add support for disk reads and writes
-
-• Rename arithtree to scc:
- ○ Have scc work like gcc and read Simple code from a file
- ○ Have scc write Simple bytecode to a file
- 
-• Allow simpletron to run bytecode from files
