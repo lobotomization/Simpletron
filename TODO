@@ -12,9 +12,9 @@
  ○ All addresses which make calls should have GOTOs to those
    addresses stored as constants.
  ○ A Call will break down into a LOAD/STORE/BRANCH
-   The return branch call corresponding to the calling address
-   will be loaded into the accumulator. This will then
-   be stored in the address of the first Return call
-   which is made after branching. Then the branch command
+   The BRANCH opcode corresponding to the calling address (PLUS ONE!! No infinite loop plz)
+   will be LOADED into the accumulator. This will then
+   be STORED in the address of the first Return call
+   made after branching. Then a BRANCH command
    will go to the call destination. Finally, control will
-   be returned by the replaced branch command.
+   be returned by the initially STORED and LOADED BRANCH command.
