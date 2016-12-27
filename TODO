@@ -6,3 +6,5 @@
  ○ Create floating point handling instructions
  ○ Create string handling instructions
  ○ Add support for disk reads and writes
+
+• Add call and return functionality to the Simple language
