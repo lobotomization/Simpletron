@@ -27,8 +27,9 @@
 *   This function returns the new scratchSpace value.
 *
 */
-void printCode(char *inputCode, StkPtr symbols);
-void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath, char *branch);
+void printCode(char *inputCode, StkPtr symbols, FILE *outfp);
+void printCodeLine(StkPtr symbols, char *curLine, FILE *outfp);
+void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath, char *branch, FILE *outfp);
 int operatorToSimplecode(char a);
-int stackToSimplecode(StkPtr symbols, StkPtr stk, StkPtr tmp, int scratchSpace);
+int stackToSimplecode(StkPtr symbols, StkPtr stk, StkPtr tmp, int scratchSpace, FILE *outfp);
 #endif //COMPILER_H_HEADER

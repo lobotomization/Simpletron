@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "simplecode.h"
 #include "arithmetic.h"
 #define DEBUG 0
@@ -8,10 +9,41 @@
 void interpreter(int *memory);
 void dump(int *memory, int accumulator, int currentIndex);
 int accumulatorFailed(int accumulator, int currentIndex);
-int main()
-{	//{branch to start 00, counter 01, max of counter 02, current max number 03, input 04, counter increment 05,
+int main(int argv, char *argc[])
+{
+    if(argv == 2){
+       FILE *binary = fopen(argc[1], "rb");
+       if(binary){
+            int memory[100] = {0}, lineNum = 0;
+            char buffer[100];
+            while(!feof(binary)){
+                fgets(buffer, 100, binary);
+                memory[lineNum] = (int)strtol(buffer, NULL, 10);
+                lineNum++;
+                if(lineNum >= 100){
+                    printf("Program length not currently supported!\n");
+                    return -1;
+                }
+            }
+            debug("%s\n{", "Running program:");
+            for(int i = 0; i < 99; i++){
+                debug("%d, ", memory[i]);
+            }
+            debug("%d}\n", memory[99]);
+
+            interpreter(memory);
+            return 0;
+       }
+       else{
+            printf("File not found!\n");
+            return 0;
+       }
+
+    }
+    //The first program here picks out the maximum of a specifed number of numbers
+    //{branch to start 00, counter 01, max of counter 02, current max number 03, input 04, counter increment 05,
 											              //18                          //24                          //30
-//	int memory[100] = {4007,0,7,0,0,1,4300,1002,2002,4206,1004,2004,2103,2001,3005,2101,3102,4230,1004,2004,3103,4124,2004,2103,2001,3005,2101,3102,4230,4018,1103,4300};
+	int memory[100] = {4007,0,7,0,0,1,4300,1002,2002,4206,1004,2004,2103,2001,3005,2101,3102,4230,1004,2004,3103,4124,2004,2103,2001,3005,2101,3102,4230,4018,1103,4300};
 //	int memory[100] = {1009, 1010, 2009, 3110, 4107, 1109, 4300, 1110, 4300, 0000, 0000};
 //  (1+2)-(24/3)*5 done by me
 //	int memory[100] = {4006, 1, 2, 24, 3, 5, 2003, 3204, 3305, 2103, 2001, 3002, 3103, 2101, 1101};
@@ -20,7 +52,8 @@ int main()
 //	int memory[100] = {0};
 //  This prints out primes up to 75! Compiled by my own compiler!
 //  int memory[100] = {4010, 0, 0, 0, 1, 0, 0, 0, 2, 75, 2002, 2101, 2002, 2103, 2001, 3004, 2174, 2074, 2101, 2004, 2105, 2001, 3205, 2174, 2074, 2106, 2006, 3305, 2174, 2001, 3174, 2174, 2074, 2107, 2002, 3107, 4140, 2002, 3107, 4249, 2005, 3004, 2174, 2074, 2105, 2001, 3105, 4163, 4021, 2003, 3004, 2174, 2074, 2103, 2005, 3004, 2174, 2074, 2105, 2001, 3105, 4163, 4021, 2003, 3108, 4170, 2008, 3103, 4170, 1101, 2001, 3109, 4112, 4300, 0};
-    int memory[100] = {4009, 0, 1, 0, 2, 0, 3, 0, 4, 2002, 2101, 2004, 2103, 2006, 2105, 2008, 2107, 2003, 3407, 2127, 2005, 3327, 2127, 2027, 2101, 1101, 4300, 0};
+//  This prints out p, where p = r*q^s and q = 2, r = 3, s = 4
+//  int memory[100] = {4009, 0, 1, 0, 2, 0, 3, 0, 4, 2002, 2101, 2004, 2103, 2006, 2105, 2008, 2107, 2003, 3407, 2127, 2005, 3327, 2127, 2027, 2101, 1101, 4300, 0};
 	printf("***          Welcome to Simpletron!               ***\n");
 	printf("***   Please enter your program one instruction   ***\n");
 	printf("***   (or data word) at a time. I will type the   ***\n");

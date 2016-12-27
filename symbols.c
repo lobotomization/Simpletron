@@ -31,9 +31,9 @@ StkPtr firstPass(char *inputCode){
     codeCopy = (char *)malloc(strlen(inputCode));
     strcpy(codeCopy, inputCode);
 
-    curLine = strtok_r(codeCopy, "\n", &nextLine);
+    curLine = strtok_r(codeCopy, "\r\n", &nextLine);
     parseLine(curLine, symbols);
-    while((curLine = strtok_r(nextLine, "\n", &nextLine))){
+    while((curLine = strtok_r(nextLine, "\r\n", &nextLine))){
         if(parseLine(curLine, symbols) == NULL)
             return NULL;
     }
