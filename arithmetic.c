@@ -1,10 +1,12 @@
 #include "stack.h"
 #include "symbols.h"
 #include "arithmetic.h"
+#include "longs.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 assoc_t assoc(char *token){
 	if(*token == '^')
@@ -15,7 +17,7 @@ assoc_t assoc(char *token){
 StkPtr shunt(char *math){
 	StkPtr output = newStk(), operators = newStk();
 	char *cursor = math, *tmp, *token;
-	while(token = readToken(&cursor)){
+	while((token = readToken(&cursor))){
 
         if(*token == '('){
 			push(operators, token);
@@ -23,7 +25,7 @@ StkPtr shunt(char *math){
 		}
 
         if(*token == ')'){
-            while(tmp = pop(operators)){
+            while((tmp = pop(operators))){
                 if(*tmp == '(')
                     break;
                 push(output, tmp);
@@ -65,7 +67,7 @@ StkPtr shunt(char *math){
 			continue;
         }
 	}
-	while(tmp = pop(operators)){
+	while((tmp = pop(operators))){
 		if(*tmp == '(' || *tmp == ')'){
 			printf("Mismatched parentheses!\n");
 			return NULL;
@@ -97,7 +99,28 @@ char *readToken(char **math){
 	return base;
 }
 
+int countOperators(char *math){
+    int count = 0;
+    while(*math != '\0'){
+        if(precedence(math))
+            count++;
+        math++;
+    }
+    return count;
+}
 
+int precedence(char *token){
+	switch(*token){
+		case '+': case '-':
+		return 1;
+		case '*': case '/':
+		return 2;
+		case '^':
+		return 3;
+		default:
+        return 0;
+	}
+}
 
 int stackIsValid(StkPtr stk){
     if(stk == NULL)
@@ -119,3 +142,63 @@ int stackIsValid(StkPtr stk){
     else
         return 1;
 }
+
+long *parseRPN(StkPtr st){
+    StkPtr tmp = newStk();
+    long a, b, c, *out;
+    char *a_st, *b_st, *cur;
+    for(int i = 0; i < st->top; i++){
+        cur = (char *)*(st->stack + i);
+        if(isdigit(*cur)){
+            push(tmp, cur);
+        }
+        else{
+            b_st = pop(tmp);   //Pop the strings backwards since this
+            a_st = pop(tmp);  //is how they're stored on the stack
+            if(a_st == NULL || b_st == NULL){
+                printf("Inappropriate number of parameters!\n");
+                return NULL;
+            }
+            b = strtol(b_st, NULL, 10);
+            a = strtol(a_st, NULL, 10);
+            c = compute(a, b, *cur);
+            push(tmp, longToString(c));
+        }
+    }
+
+    out = malloc(sizeof(long));
+    *out = strtol(pop(tmp), NULL, 10);
+
+    return out;
+
+}
+
+
+long compute(long a, long b, char c){
+    switch(c){
+    case '+':
+        return a+b;
+    case '-':
+        return a-b;
+    case '*':
+        return a*b;
+    case '/':
+        return a/b;
+    case '^':
+        return power(a,b);
+    default:
+        printf("Bad symbol %c detected during parse!\n", c);
+        return 0;
+    }
+}
+
+long power(long a, long b){
+    long out = a;
+    b--;
+    while(b){
+        out *= a;
+        b--;
+    }
+    return out;
+}
+

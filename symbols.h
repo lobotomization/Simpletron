@@ -7,22 +7,71 @@ typedef struct symbolentry {
     char type; //'c' for constant, 'v' for variable, 'l' for line number
     unsigned int addr; //Address the symbol value is stored at
 } Sym;
+//Create a type for pointers to symbols
 typedef Sym *SymPtr;
 
+/*
+*   This compiler uses a crude 'two-pass' symbol table system.
+*   The first pass collects all of the line numbers, constants and variables.
+*   As constants and variables are collected they are given
+*   sequentially increasing addresses, starting from 1.
+*   Address 0 is always reserved for a branch instruction, which is
+*   used to jump past the symbol table at the top of a program.
+*   Line numbers wil not be given addresses on the first pass.
+*   The second pass will merely give the line numbers sequentially
+*   increasing addresses, starting directly after the last
+*   address given to a constant or variable.
+*/
+
+
+/*
+* parseLine -
+*   This function parses the Simple language one line at a time.
+*
+*   Large amounts of syntactical error checking is done in this function,
+*   which increases its complexity.
+*
+* firstPass -
+*   Loads symbols, provides addresses to variables and constants.
+*   Takes a full Simple program as input and produces a proto-symbol table.
+*
+* secondPass -
+*   Line numbers are given addresses here.
+*   This function takes the same Simple program as the first pass, as well as the
+*   proto-symbol table produced by the first pass. The proto-symbol table specified
+*   by the symbols variable will have its line numbers updated. The output will
+*   be the symbol table. Since the symbol table will already be changed, this
+*   output is redundant.
+*
+* symbolDoesntExist - Checks for the existence of a symbol
+* updateSymbol - Updates the address of the given symbol
+* getHighestLineAddress - Gets the highest address currently assigned in a symbol table
+* getHighestLineNum - Gets the highest line number in a symbol table
+* getSymbolAddress - Gets the address assigned to a symbol from a symbol table
+* addSymbolToTable - Adds the symbol to the symbol table if it doesn't already exist.
+* parseMathIntoSymbols - This parses in-fix arithmetic into symbols and places them into the symbol table.
+* calculateLineNumbers -
+*   This function is used in secondPass to calculate the actual line numbers.
+*   calculateLineNumbers is extremely sensitive to how let and if statements are parsed!
+*
+*   Knowing the exact length of the bytecode produced by let and if statements
+*   is required for this function to do its job. Therefore, if any changes are made
+*   in how the compiler handles these functions which changes the length of the
+*   corresponding bytecode, these changes must be reflected in this function.
+*
+* validIfOp - This function makes sure an operator in an if statement is valid
+*/
+
 StkPtr parseLine(char *line, StkPtr symbols);
-StkPtr createSymbolTable(StkPtr st);
 StkPtr firstPass(char *inputCode);
 StkPtr secondPass(char *inputCode, StkPtr symbols);
-void printCode(char *inputCode, StkPtr symbols);
-int precedence(char *token);
-int getHighestAddress(StkPtr stk);
-int variableDoesntExist(StkPtr stk, char *token);
-int constantDoesntExist(StkPtr stk, char *token);
-int lineDoesntExist(StkPtr stk, char *token);
-int highestLineNum(StkPtr stk);
+int symbolDoesntExist(StkPtr stk, char *token, char type);
 int updateSymbol(StkPtr symbols, char * name, char type, int addr);
-int countOperators(char *math);
+int getHighestAddress(StkPtr stk);
+int getHighestLineNum(StkPtr stk);
 int getSymbolAddress(StkPtr symbols, char *name, char type);
-void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath, char *branch);
-int operatorToSimplecode(char a);
+int addSymbolToTable(StkPtr symbols, char* symbol, int addr, char type);
+int parseMathIntoSymbols(StkPtr symbols, char *math);
+int calculateLineNumbers(StkPtr symbols, char *curLine, int offset);
+int validIfOp(char *op);
 #endif //SYMBOLS_H_HEADER

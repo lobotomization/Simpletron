@@ -47,3 +47,13 @@ void printStack(StkPtr st){
     }
 }
 
+StkPtr copyStack(StkPtr st){
+     char *newPointer;
+     StkPtr newStack = newStk();
+     for(int i = 0; i < st->top; i++){
+        newPointer = (char *)malloc(strlen(st->stack[i]));
+        strcpy(newPointer, st->stack[i]);
+        push(newStack, newPointer);
+     }
+     return newStack;
+}
