@@ -8,6 +8,12 @@
 #include <string.h>
 
 
+int max(int a, int b){
+    if(a>b)
+        return a;
+    return b;
+}
+
 assoc_t assoc(char *token){
 	if(*token == '^')
 	return right;

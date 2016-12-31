@@ -9,7 +9,7 @@
 #include <ctype.h>
 
 
-StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in first pass, so this pass is lazier
+/*StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in first pass, so this pass is lazier
     char *curLine, *nextLine, *codeCopy = (char *)malloc(strlen(inputCode));
     int offset = getHighestAddress(symbols) + 1;
     strcpy(codeCopy, inputCode);
@@ -21,29 +21,73 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
         offset = calculateLineNumbers(symbols, curLine, offset);
     }
     return symbols;
+}*/
+
+StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in first pass, so this pass is lazier
+    char *codeCopy = (char *)malloc(strlen(inputCode));
+    strcpy(codeCopy, inputCode);
+    char *curLine, *nextLine, *lineNum, *instruction;
+
+    int offset = max(getHighestAddress(symbols, 'c'), getHighestAddress(symbols, 'v')) + 1;
+    SymPtr symptr;
+    for(int i = 0; i < symbols->top; i++){
+        symptr = (SymPtr)symbols->stack[i];
+        if(symptr->type == 'l')
+        updateSymbol(symbols, symptr->symbol, 'l', symptr->addr + offset);
+    }
+
+    curLine = strtok_r(codeCopy, "\r\n", &nextLine);
+    lineNum = strtok(curLine, " ");
+    instruction = strtok(NULL, " ");
+    if(strcmp(instruction, "call") == 0){
+        char branchConstant[] = "4000";
+        char *nextLineAddr = longToString(getNextLineAddress(symbols, lineNum));
+        strcpy(branchConstant+4 - strlen(nextLineAddr), nextLineAddr); //This copies the token into the last n zeros (assuming it's n chars long)
+        //If an address of length three got into nextLineAddr somehow, bad stuff would happen. Addresses of this length are not supported
+        //so they shouldn't be generated or encountered. They probably can be since I have poor bound checking (for example, when using scratchSpace)
+        replaceSymbol(symbols, "BRANCH", branchConstant, 'c');
+    }
+    while((curLine = strtok_r(nextLine, "\r\n", &nextLine))){
+        lineNum = strtok(curLine, " ");
+        instruction = strtok(NULL, " ");
+        if(strcmp(instruction, "call") == 0){
+            char branchConstant[] = "4000";
+            char *nextLineAddr = longToString(getNextLineAddress(symbols, lineNum));
+            strcpy(branchConstant+4 - strlen(nextLineAddr), nextLineAddr); //This copies the token into the last n zeros (assuming it's n chars long)
+            replaceSymbol(symbols, "BRANCH", branchConstant, 'c');
+        }
+    }
+    return symbols;
 }
 
 StkPtr firstPass(char *inputCode){
-    char *codeCopy;
-    StkPtr symbols = newStk();
-    char *curLine, *nextLine;
-
-    codeCopy = (char *)malloc(strlen(inputCode));
+    char *codeCopy = (char *)malloc(strlen(inputCode));
     strcpy(codeCopy, inputCode);
 
+    StkPtr symbols = newStk();
+    char *curLine, *nextLine;
+    int offset = 0;
+
     curLine = strtok_r(codeCopy, "\r\n", &nextLine);
-    parseLine(curLine, symbols);
+    if(parseLine(curLine, symbols) == NULL)
+        return NULL;
+    offset = calculateLineNumbers(symbols, curLine, offset);
+
     while((curLine = strtok_r(nextLine, "\r\n", &nextLine))){
         if(parseLine(curLine, symbols) == NULL)
             return NULL;
+        offset = calculateLineNumbers(symbols, curLine, offset);
     }
 
     return symbols;
 }
 
-StkPtr parseLine(char *line, StkPtr symbols){
+StkPtr parseLine(char *instrline, StkPtr symbols){
+    char *line = (char *)malloc(strlen(instrline));
+    strcpy(line, instrline); //Allow pointer reusability
     char *lineNum, *instruction, *token, *leftMath, *op, *rightMath, *garbage;
     long *lineValuePtr;
+    int nextAddress = max(getHighestAddress(symbols, 'c'), getHighestAddress(symbols, 'v')) + 1;
 
     lineNum = strtok(line, " ");
     lineValuePtr = parseLong(lineNum);
@@ -62,12 +106,11 @@ StkPtr parseLine(char *line, StkPtr symbols){
     if(instruction == NULL){
         return symbols;
     }
-    if(strcmp(instruction, "rem")==0){
-        addSymbolToTable(symbols, lineNum, 0, 'l');
+    else if(strcmp(instruction, "rem")==0){
         strtok(NULL, "\n"); //Clear out rest of line
         return symbols;
     }
-    if(strcmp(instruction, "input")==0){
+    else if(strcmp(instruction, "input")==0){
         token = strtok(NULL, " ");
         if(token){
             if((garbage = strtok(NULL, " "))){
@@ -75,8 +118,7 @@ StkPtr parseLine(char *line, StkPtr symbols){
                 return NULL;
             }
             else{
-                addSymbolToTable(symbols, token, getHighestAddress(symbols)+1, 'v');
-                addSymbolToTable(symbols, lineNum, 0, 'l');
+                addSymbolToTable(symbols, token, nextAddress, 'v');
                 return symbols;
             }
         }
@@ -85,7 +127,7 @@ StkPtr parseLine(char *line, StkPtr symbols){
             return NULL;
         }
     }
-    if(strcmp(instruction, "print")==0){
+    else if(strcmp(instruction, "print")==0){
         token = strtok(NULL, " ");
         if(token){
             if((garbage = strtok(NULL, " "))){
@@ -93,8 +135,7 @@ StkPtr parseLine(char *line, StkPtr symbols){
                 return NULL;
             }
             else{
-                addSymbolToTable(symbols, token, getHighestAddress(symbols)+1, 'v');
-                addSymbolToTable(symbols, lineNum, 0, 'l');
+                addSymbolToTable(symbols, token, nextAddress, 'v');
                 return symbols;
             }
         }
@@ -103,7 +144,7 @@ StkPtr parseLine(char *line, StkPtr symbols){
             return NULL;
         }
     }
-    if(strcmp(instruction, "goto")==0){
+    else if(strcmp(instruction, "goto")==0){
         token = strtok(NULL, " ");
         if(token){
             if((garbage = strtok(NULL, " "))){
@@ -116,7 +157,6 @@ StkPtr parseLine(char *line, StkPtr symbols){
                     printf("Non-numeric line number: %s\n", token);
                     return NULL;
                 }
-                addSymbolToTable(symbols, lineNum, 0, 'l');
                 return symbols;
             }
         }
@@ -125,7 +165,7 @@ StkPtr parseLine(char *line, StkPtr symbols){
             return NULL;
         }
     }
-    if(strcmp(instruction, "let")==0){
+    else if(strcmp(instruction, "let")==0){
         token = strtok(NULL, " ");
         if(token){
             op = strtok(NULL, " "); //op is = in this case
@@ -133,12 +173,11 @@ StkPtr parseLine(char *line, StkPtr symbols){
                 rightMath = strtok(NULL, " ");
                 if(rightMath){
                         //Add variable to symbol table
-                    addSymbolToTable(symbols, token, getHighestAddress(symbols)+1, 'v');
+                    addSymbolToTable(symbols, token, nextAddress, 'v');
                         //Math is placed into symbol table here
                         //Function returns 1 on success, 0 on failure
                     if(!parseMathIntoSymbols(symbols, rightMath))
                         return NULL;
-                    addSymbolToTable(symbols, lineNum, 0, 'l');
                     return symbols;
                 }
                 else{
@@ -156,7 +195,7 @@ StkPtr parseLine(char *line, StkPtr symbols){
             return NULL;
         }
     }
-    if(strcmp(instruction, "if")==0){
+    else if(strcmp(instruction, "if")==0){
         leftMath = strtok(NULL, " ");
         if(leftMath){
             op = strtok(NULL, " ");
@@ -184,7 +223,6 @@ StkPtr parseLine(char *line, StkPtr symbols){
                                 return NULL;
                             }
 
-                            addSymbolToTable(symbols, lineNum, 0, 'l');
                             return symbols;
                         }
                         else{
@@ -211,33 +249,79 @@ StkPtr parseLine(char *line, StkPtr symbols){
             return NULL;
         }
     }
-    if(strcmp(instruction, "end")==0){
+    else if(strcmp(instruction, "end")==0){
         if((garbage = strtok(NULL, " "))){
             printf("Extra symbols (%s) detected after end statement!\n", garbage);
             return NULL;
         }
-        else
-            addSymbolToTable(symbols, lineNum, 0, 'l');
+        return symbols;
+    }
+    else if(strcmp(instruction, "call")==0){
+        token = strtok(NULL, " "); //This is the line number we're on
+   /*     char branchCommand[] = "4000";
+        char *nextLineAddr = longToString(getNextLineAddress(symbols, token));
+        strcpy(branchCommand+2, nextLineAddr); //This copies the token into the last two zeros (assuming it's two chars long!)
+        */
+        if(token){
+            if((garbage = strtok(NULL, " "))){
+                printf("Extra symbols (%s) detected after call statement!\n", garbage);
+                return NULL;
+            }
+            else{
+                //This constant needs to be replaced by a proper branching constant
+                // of the form 40XX, where XX points to the address of the next line number
+
+                //The branching constant will be added on the second pass, this was the motivation for the
+                //rearrangment of the first and second pass.
+                //Since the line numbers are now completely deterministic and simple to compute, I
+                //can compute the "next line address" which will be returned to.
+
+                //This placeholder is added so that it can be updated in the second pass
+                //as well as to give the line numbers the proper offset.
+                char branchName[] = "BRANCH";
+                int brID = 0;
+                strcpy(branchName+6, longToString(brID));
+                while(!addSymbolToTable(symbols, branchName, nextAddress, 'c')){
+                    brID++;
+                    strcpy(branchName+6, longToString(brID));
+                }
+            }
+        }
+        else{
+            printf("Line number missing after call statement!\n");
+            return NULL;
+        }
+        return symbols;
+    }
+    else if(strcmp(instruction, "return")==0){
+        if((garbage = strtok(NULL, " "))){
+            printf("Extra symbols (%s) detected after end statement!\n", garbage);
+            return NULL;
+        }
         return symbols;
     }
     else{
         printf("Invalid instruction (%s) detected!\n", instruction);
         return NULL;
     }
+    printf("This shouldn't happen!\n");
+    return NULL;
 }
-
 //These are meant to be used on a StkPtr full of SymPtr's
-int getHighestAddress(StkPtr stk){
+int getHighestAddress(StkPtr stk, char type){
     if(stk == NULL)
         return -1;
 
     int out = 0;
     for(int i = 0; i < stk->top; i++){
-        if(((SymPtr)stk->stack[i])->addr > out)
-            out = ((SymPtr)stk->stack[i])->addr;
+        if(((SymPtr)stk->stack[i])->type == type)
+            if(((SymPtr)stk->stack[i])->addr > out)
+                out = ((SymPtr)stk->stack[i])->addr;
     }
     return out;
 }
+
+
 
 int symbolDoesntExist(StkPtr stk, char *token, char type){
     if(stk == NULL)
@@ -318,15 +402,17 @@ int addSymbolToTable(StkPtr symbols, char* symbol, int addr, char type){
 int parseMathIntoSymbols(StkPtr symbols, char *math){
     StkPtr stkptr = shunt(math);
     char *stackValue;
+    int nextAddress;
     if(stkptr){
         if(stackIsValid(stkptr)){
             for(int i = 0; i < stkptr->top; i++){
                 stackValue = (char *)stkptr->stack[i];
+                nextAddress = max(getHighestAddress(symbols, 'c'), getHighestAddress(symbols, 'v')) + 1;
                 if(isdigit(*stackValue)){ //Number
-                    addSymbolToTable(symbols, stackValue, getHighestAddress(symbols)+1, 'c');
+                    addSymbolToTable(symbols, stackValue, nextAddress, 'c');
                 }
                 else if(precedence(stackValue) == 0){ //Variable
-                    addSymbolToTable(symbols, stackValue, getHighestAddress(symbols)+1, 'v');
+                    addSymbolToTable(symbols, stackValue, nextAddress, 'v');
                 }
             }
         }
@@ -347,8 +433,8 @@ int calculateLineNumbers(StkPtr symbols, char *curLine, int offset){
     char *instruction = strtok(NULL, " ");
     char *leftMath, *rightMath, *op;
 
-    updateSymbol(symbols, lineNum, 'l', offset);
-    if(!strcmp(instruction, "goto")||!strcmp(instruction, "print")||!strcmp(instruction, "input")||!strcmp(instruction, "end")){
+    addSymbolToTable(symbols, lineNum, offset, 'l');
+    if(!strcmp(instruction, "goto")||!strcmp(instruction, "print")||!strcmp(instruction, "input")||!strcmp(instruction, "end")||!strcmp(instruction, "return")){
         offset++;
     }
     if(!strcmp(instruction, "let")){
@@ -373,6 +459,8 @@ int calculateLineNumbers(StkPtr symbols, char *curLine, int offset){
             offset+=3; // x!=y is the same as x>y OR x<y, so an extra three instructions are needed
         }
     }
+    if(!strcmp(instruction, "call"))
+    offset+=3; //Call requires a load/store/branch
 
     return offset;
 }
@@ -380,4 +468,35 @@ int calculateLineNumbers(StkPtr symbols, char *curLine, int offset){
 //!strcmp actually means the strings are equal
 int validIfOp(char *op){
     return !strcmp(op, "==")||!strcmp(op, ">=")||!strcmp(op, "<=")||!strcmp(op, ">")||!strcmp(op, "<")||!strcmp(op, "!=");
+}
+
+int getNextLineAddress(StkPtr symbols, char *curLineNum){
+    SymPtr symptr;
+    int havePassedLine = 0;
+    for(int i = 0; i < symbols->top; i++){
+            symptr = (SymPtr)symbols->stack[i];
+        if(!strcmp(symptr->symbol, curLineNum)){
+            havePassedLine = 1;
+            continue;
+        }
+        if(havePassedLine && symptr->type == 'l')
+            return getSymbolAddress(symbols, symptr->symbol, 'l');
+    }
+    return 0;
+}
+
+//If oldSym matches the initial chars of a symbol, the first such matching symbol is replaced with newSym.
+//Very handy for replacing branch placeholder symbols like "BRANCH0", "BRANCH1", etc. with appropriate branching constants
+int replaceSymbol(StkPtr symbols, char *oldSym, char *newSym, char type){
+    SymPtr symptr;
+    int oldSymLen = strlen(oldSym);
+    for(int i = 0; i < symbols->top; i++){
+        symptr = (SymPtr)symbols->stack[i];
+        if(symptr->type == type)
+            if(strncmp(symptr->symbol, oldSym, oldSymLen) == 0){
+                strcpy(symptr->symbol, newSym);
+                return 1;
+            }
+    }
+    return 0;
 }

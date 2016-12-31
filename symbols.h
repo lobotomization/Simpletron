@@ -45,7 +45,7 @@ typedef Sym *SymPtr;
 *
 * symbolDoesntExist - Checks for the existence of a symbol
 * updateSymbol - Updates the address of the given symbol
-* getHighestLineAddress - Gets the highest address currently assigned in a symbol table
+* getHighestLineAddress - Gets the highest address of a given symbol type currently assigned in a symbol table
 * getHighestLineNum - Gets the highest line number in a symbol table
 * getSymbolAddress - Gets the address assigned to a symbol from a symbol table
 * addSymbolToTable - Adds the symbol to the symbol table if it doesn't already exist.
@@ -67,11 +67,13 @@ StkPtr firstPass(char *inputCode);
 StkPtr secondPass(char *inputCode, StkPtr symbols);
 int symbolDoesntExist(StkPtr stk, char *token, char type);
 int updateSymbol(StkPtr symbols, char * name, char type, int addr);
-int getHighestAddress(StkPtr stk);
+int getHighestAddress(StkPtr stk, char type);
 int getHighestLineNum(StkPtr stk);
 int getSymbolAddress(StkPtr symbols, char *name, char type);
 int addSymbolToTable(StkPtr symbols, char* symbol, int addr, char type);
 int parseMathIntoSymbols(StkPtr symbols, char *math);
 int calculateLineNumbers(StkPtr symbols, char *curLine, int offset);
 int validIfOp(char *op);
+int getNextLineAddress(StkPtr symbols, char *curLineNum);
+int replaceSymbol(StkPtr symbols, char *oldSym, char *newSym, char type);
 #endif //SYMBOLS_H_HEADER

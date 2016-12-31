@@ -13,5 +13,7 @@
 #define BRANCHNEG 41 //Branches to location ## if accumulator < 0
 #define BRANCHZERO 42 //Branches to location ## if accumulator = 0
 #define HALT 43 //Ends program execution
-#define INST_SIZE 100
+
+#define ADDR_SIZE 100
+
 #endif

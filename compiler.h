@@ -28,8 +28,9 @@
 *
 */
 void printCode(char *inputCode, StkPtr symbols, FILE *outfp);
-void printCodeLine(StkPtr symbols, char *curLine, FILE *outfp);
+void printCodeLine(char *inputCode, StkPtr symbols, char *curLine, FILE *outfp);
 void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath, char *branch, FILE *outfp);
 int operatorToSimplecode(char a);
 int stackToSimplecode(StkPtr symbols, StkPtr stk, StkPtr tmp, int scratchSpace, FILE *outfp);
+int getReturnAddress(char *inputCode, StkPtr symbols, char *callAddr);
 #endif //COMPILER_H_HEADER

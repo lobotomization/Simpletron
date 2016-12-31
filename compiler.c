@@ -11,8 +11,8 @@
 
 void printCode(char *inputCode, StkPtr symbols, FILE* outfp){
     int numOfSymbols = 0;
-    char *curLine, *nextLine;
-
+    char *curLine, *nextLine, *codeCopy = (char *)malloc(strlen(inputCode));
+    strcpy(codeCopy, inputCode);
     for(int i = 0; i < symbols->top; i++){
         if(((SymPtr)symbols->stack[i])->type == 'c'||((SymPtr)symbols->stack[i])->type == 'v')
             numOfSymbols++;
@@ -28,17 +28,19 @@ void printCode(char *inputCode, StkPtr symbols, FILE* outfp){
     }
 
 
-    curLine = strtok_r(inputCode, "\n\r", &nextLine);
-    printCodeLine(symbols, curLine, outfp);
+    curLine = strtok_r(codeCopy, "\n\r", &nextLine);
+    printCodeLine(inputCode, symbols, curLine, outfp);
 
     //First line done, begin looping through the rest
     while((curLine = strtok_r(nextLine, "\n\r", &nextLine))){
-        printCodeLine(symbols, curLine, outfp);
+        printCodeLine(inputCode, symbols, curLine, outfp);
     }
     //printf("0}\n"); //At least pretend to close it off for now
 }
-void printCodeLine(StkPtr symbols, char *curLine, FILE *outfp){
-    strtok(curLine, " "); //Tokenize past line number
+//getReturnAddress forces this function to require access to char *inputCode
+//Is there a nicer way around this to maintain some locality?
+void printCodeLine(char *inputCode, StkPtr symbols, char *curLine, FILE *outfp){
+    char *lineNum = strtok(curLine, " ");
     char *instruction = strtok(NULL, " "), *token, *leftMath, *op, *rightMath;
     if(strcmp(instruction, "goto")==0){
         token = strtok(NULL, " ");
@@ -54,6 +56,20 @@ void printCodeLine(StkPtr symbols, char *curLine, FILE *outfp){
     }
     if(strcmp(instruction, "end")==0){
         fprintf(outfp, "%02d%02d\n", HALT, 0);
+    }
+    if(strcmp(instruction, "return")==0){
+        fprintf(outfp, "%02d%02d\n", BRANCH, 0);
+    }
+    if(strcmp(instruction, "call")==0){
+        token = strtok(NULL, " ");
+        char branchCommand[] = "4000";
+        //This copies the current line number
+        //into the last two zeros (assuming it's two chars long!)
+        strcpy(branchCommand+2, longToString(getNextLineAddress(symbols, lineNum)));
+        //branchCommand now contains the return branch command
+        fprintf(outfp, "%02d%02d\n", LOAD, getSymbolAddress(symbols, branchCommand, 'c'));
+        fprintf(outfp, "%02d%02d\n", STORE, getReturnAddress(inputCode, symbols, token));
+        fprintf(outfp, "%02d%02d\n", BRANCH, getSymbolAddress(symbols, token, 'l'));
     }
     if(strcmp(instruction, "let")==0){
         token = strtok(NULL, " ");
@@ -74,7 +90,8 @@ void printCodeLine(StkPtr symbols, char *curLine, FILE *outfp){
 void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath, char *branch, FILE *outfp){
     StkPtr leftStk = shunt(leftMath);
     StkPtr rightStk = shunt(rightMath);
-    int scratchSpace = getHighestAddress(symbols) + 1;
+    int scratchSpace =  max(max(getHighestAddress(symbols, 'c'), getHighestAddress(symbols, 'v')), getHighestAddress(symbols, 'l')) + 1;
+    int initSS = scratchSpace;
     StkPtr tmp = newStk();
     long leftAddressNum, rightAddressNum, branchNum;
     char *leftAddress, *rightAddress, *stackValue;
@@ -107,7 +124,7 @@ void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath,
         fprintf(outfp, "%02d%02d\n", LOAD, (int)rightAddressNum);
         fprintf(outfp, "%02d%02d\n", STORE, (int)leftAddressNum);
 
-        scratchSpace = getHighestAddress(symbols) + 1; //Reset scratch space after usage
+        scratchSpace =  initSS; //Reset scratch space after usage
     }
     else{
         //Make sure to keep the updated scratchSpace value for the next stack!!
@@ -119,7 +136,7 @@ void mathToSimplecode(StkPtr symbols, char *leftMath, char *op, char *rightMath,
         rightAddressNum = strtol(rightAddress, NULL, 10);
         branchNum = getSymbolAddress(symbols, branch, 'l');
 
-        scratchSpace = getHighestAddress(symbols) + 1; //Reset scratch space after usage
+        scratchSpace =  initSS; //Reset scratch space after usage
 
     }
     if(!strcmp(op, "==")){
@@ -181,7 +198,9 @@ int operatorToSimplecode(char a){
 int stackToSimplecode(StkPtr symbols, StkPtr stk, StkPtr tmp, int scratchSpace, FILE *outfp){
     char *a_st, *b_st;
     long a, b;
+    int highestAddress;
     for(int i = 0; i < stk->top; i++){
+        highestAddress = max(max(getHighestAddress(symbols, 'c'), getHighestAddress(symbols, 'v')), getHighestAddress(symbols, 'l'));
         if(precedence(stk->stack[i]) == 0){
             push(tmp, stk->stack[i]);
         }
@@ -199,20 +218,55 @@ int stackToSimplecode(StkPtr symbols, StkPtr stk, StkPtr tmp, int scratchSpace, 
             //Perform a (operator) b and store it in the accumulator
             fprintf(outfp, "%02d%02d\n", operatorToSimplecode(*(char *)stk->stack[i]), (int)b);
             //Store the result into stratch space, or a or b if they're in scratch space already.
-            if(a > getHighestAddress(symbols)){
+            if(a > highestAddress){ //a is in scratchSpace
                 fprintf(outfp, "%02d%02d\n", STORE, (int)a);
                 push(tmp, a_st);
             }
-            else if(b > getHighestAddress(symbols)){
+            else if(b > highestAddress){ //b is in scratchSpace
                 fprintf(outfp, "%02d%02d\n", STORE, (int)b);
                 push(tmp, b_st);
             }
-            else{
+            else{ //Neither variables are in scratchSpace, use the next empty temp variable
                 fprintf(outfp, "%02d%02d\n", STORE, scratchSpace);
                 push(tmp, longToString((long)scratchSpace));
                 scratchSpace++;
             }
         }
     }
-    return scratchSpace;
+    return scratchSpace; //This contains the address of the next unused empty temp variable
 }
+
+int getReturnAddress(char *inputCode, StkPtr symbols, char *callAddr){
+
+    char *inputCopy = (char *)malloc(strlen(inputCode));
+    strcpy(inputCopy, inputCode);
+
+    char *curLine, *nextLine;
+    char *lineNum, *instruction;
+    int passedCallAddr = 0;
+
+    curLine = strtok_r(inputCopy, "\n\r", &nextLine);
+    lineNum = strtok(curLine, " ");
+    instruction = strtok(NULL, " ");
+    if(!strcmp(lineNum, callAddr)){
+        passedCallAddr = 1;
+    }
+    if(passedCallAddr && !strcmp(instruction, "return"))
+        return getSymbolAddress(symbols, lineNum, 'l');
+
+    //First line done, begin looping through the rest
+    while((curLine = strtok_r(nextLine, "\n\r", &nextLine))){
+        lineNum = strtok(curLine, " ");
+        instruction = strtok(NULL, " ");
+        if(!strcmp(lineNum, callAddr)){ //If we're on the calling address
+            passedCallAddr = 1; //Set the flag
+        }
+        if(passedCallAddr && !strcmp(instruction, "return"))
+            return getSymbolAddress(symbols, lineNum, 'l');
+
+    }
+    return 0;
+}
+
+
+

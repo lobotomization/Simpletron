@@ -45,7 +45,6 @@ int main(int argv, char *argc[])
         }
     }
 
-    }
     if(argv == 4){
         FILE *outfile, *infile;
         if(!strcmp(argc[1], "-o")){

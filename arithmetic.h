@@ -19,7 +19,7 @@ typedef enum assoc{left, right} assoc_t;
 * parseRPN - This parses and evaluates a stack of arithmetic given in reverse polish notation
 * power - Performs exponentiation of long ints, returns a^b
 */
-
+int max(int a, int b);
 assoc_t assoc(char *token);
 StkPtr shunt(char *math);
 char *readToken(char **math);
