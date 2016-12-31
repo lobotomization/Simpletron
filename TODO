@@ -7,8 +7,14 @@
  ○ Create string handling instructions
  ○ Add support for disk reads and writes
 
-• Rename arithtree to scc:
- ○ Have scc work like gcc and read Simple code from a file
- ○ Have scc write Simple bytecode to a file
- 
-• Allow simpletron to run bytecode from files
+• Add call and return functionality to the Simple language
+ ○ Think about doing this with mutable goto addresses
+ ○ All addresses which make calls should have GOTOs to those
+   addresses stored as constants.
+ ○ A Call will break down into a LOAD/STORE/BRANCH
+   The BRANCH opcode corresponding to the calling address (PLUS ONE!! No infinite loop plz)
+   will be LOADED into the accumulator. This will then
+   be STORED in the address of the first Return call
+   made after branching. Then a BRANCH command
+   will go to the call destination. Finally, control will
+   be returned by the initially STORED and LOADED BRANCH command.
