@@ -17,3 +17,11 @@
   This causes the compiler to think there are more memory addresses being used for instructions
   than there actually are, causing the scratchSpace (i.e. space *after* all the program memory)
   to be placed slightly farther out than it otherwise would be.
+
+• This is more of a note than anything. To add a new arithmetic operator one must modify:
+  simplecode.h -> Add new instruction
+  simpletron.c -> interpreter -> Add new case for handling instruction
+  arithmetic.c -> precendence -> Specify precendece of operator
+  arithmetic.c -> assoc -> Specify associativity of operator (only necessary if right-associative rather than left)
+  arithmetic.c -> compute -> Specify the computation to be performed
+  compiler.c -> operatorToSimplecode -> Specify the bytecode of the operator
