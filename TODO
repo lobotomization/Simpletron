@@ -7,14 +7,13 @@
  ○ Create string handling instructions
  ○ Add support for disk reads and writes
 
-• Add call and return functionality to the Simple language
- ○ Think about doing this with mutable goto addresses
- ○ All addresses which make calls should have GOTOs to those
-   addresses stored as constants.
- ○ A Call will break down into a LOAD/STORE/BRANCH
-   The BRANCH opcode corresponding to the calling address (PLUS ONE!! No infinite loop plz)
-   will be LOADED into the accumulator. This will then
-   be STORED in the address of the first Return call
-   made after branching. Then a BRANCH command
-   will go to the call destination. Finally, control will
-   be returned by the initially STORED and LOADED BRANCH command.
+• Rem instructions at the end of a Simple program can change the resulting
+  memory addresses of scratchSpace variables. This is harmless afaik, but still
+  unasthetic.
+  This change occurs because the line numbers corresponding to rem instructions are
+  given the memory address of the *following* instruction. This means that if the last
+  line(s) of a program consists of rem instructions then those line numbers will be given
+  the memory address that the first instruction placed *after* the rem's would be given.
+  This causes the compiler to think there are more memory addresses being used for instructions
+  than there actually are, causing the scratchSpace (i.e. space *after* all the program memory)
+  to be placed slightly farther out than it otherwise would be.
