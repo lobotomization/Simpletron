@@ -33,19 +33,23 @@ typedef Sym *SymPtr;
 *
 * firstPass -
 *   Loads symbols, provides addresses to variables and constants.
+*   Line numbers are given relative addresses here, correct up to an offset.
+*   Branching constants (for call/return pairs) are given placeholders here.
 *   Takes a full Simple program as input and produces a proto-symbol table.
 *
 * secondPass -
-*   Line numbers are given addresses here.
+*   The addresses of line numbers are shifted by an offset calculated here.
 *   This function takes the same Simple program as the first pass, as well as the
 *   proto-symbol table produced by the first pass. The proto-symbol table specified
-*   by the symbols variable will have its line numbers updated. The output will
-*   be the symbol table. Since the symbol table will already be changed, this
-*   output is redundant.
+*   by the symbols variable will have its line numbers updated. Branching constants are replaced by their appropriate values.
+
+The output of this
+*   function will be the symbol table. Since the symbol table will already
+*   be changed this output is redundant.
 *
 * symbolDoesntExist - Checks for the existence of a symbol
 * updateSymbol - Updates the address of the given symbol
-* getHighestLineAddress - Gets the highest address of a given symbol type currently assigned in a symbol table
+* getHighestAddress - Gets the highest address of a given symbol type currently assigned in a symbol table
 * getHighestLineNum - Gets the highest line number in a symbol table
 * getSymbolAddress - Gets the address assigned to a symbol from a symbol table
 * addSymbolToTable - Adds the symbol to the symbol table if it doesn't already exist.
@@ -60,6 +64,11 @@ typedef Sym *SymPtr;
 *   corresponding bytecode, these changes must be reflected in this function.
 *
 * validIfOp - This function makes sure an operator in an if statement is valid
+* getNextLineAddress - Gets the memory address of the line after the given line number.
+* replaceSymbol -
+*   If oldSym matches the initial chars of a symbol, the *first such* matching symbol is replaced with newSym.
+*   Very handy for replacing branch placeholder symbols like "BRANCH0", "BRANCH1", etc. with appropriate branching constants
+
 */
 
 StkPtr parseLine(char *line, StkPtr symbols);

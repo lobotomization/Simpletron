@@ -5,6 +5,7 @@
 typedef enum assoc{left, right} assoc_t;
 
 /*
+* max - Returns the max of two integers
 * assoc - This returns the associativity of an operator (left or right)
 * shunt -
 *   This function uses the shunting yard algorithm.
@@ -14,7 +15,18 @@ typedef enum assoc{left, right} assoc_t;
 *   subtraction, division and exponentiation of
 *   unsigned long ints.
 *
+* readToken -
+*   This function takes the address of a string (i.e. char **) and
+*   returns either the longest number it can parse, or the first non-digit
+*   character it encounters. The input string will have its pointer moved
+*   forward according to how many characters readToken reads, allowing for
+*   the same string to be continuously input into readToken until it is read.
+*   The output of this function a string (char *) containing the token
+*   that readToken read.
+*
+* countOperators - This returns the number of arithmetic operators in a string of math
 * precedence - This returns the precedence of an arithmetic operator
+* stackIsValid - Makes sure the number of numbers is one greater than the number of operators
 * compute - Applies the arithmetic operator specified by the char c
 * parseRPN - This parses and evaluates a stack of arithmetic given in reverse polish notation
 * power - Performs exponentiation of long ints, returns a^b

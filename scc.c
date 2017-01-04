@@ -25,6 +25,8 @@ int main(int argv, char *argc[])
             rewind(infile);
             while(!feof(infile))
             amountRead += fread(input + amountRead, sizeof(char), (int)filesize, infile);
+
+            input[filesize] = 0; //Put null char to avoid garbage at the end!
             debug("%s\n\n********* Parsing Code *********\n", input);
 
             StkPtr symbolTable = firstPass(input);
@@ -67,6 +69,8 @@ int main(int argv, char *argc[])
         rewind(infile);
         while(!feof(infile))
         amountRead += fread(input + amountRead, sizeof(char), (int)filesize, infile);
+
+        input[filesize] = 0; //Put null char to avoid garbage at the end!
         debug("%s\n\n********* Parsing Code *********\n", input);
 
         StkPtr symbolTable = firstPass(input);

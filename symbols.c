@@ -8,21 +8,6 @@
 #include <string.h>
 #include <ctype.h>
 
-
-/*StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in first pass, so this pass is lazier
-    char *curLine, *nextLine, *codeCopy = (char *)malloc(strlen(inputCode));
-    int offset = getHighestAddress(symbols) + 1;
-    strcpy(codeCopy, inputCode);
-    curLine = strtok_r(codeCopy, "\n", &nextLine);
-    offset = calculateLineNumbers(symbols, curLine, offset);
-
-    //First line done, begin looping through the rest
-    while((curLine = strtok_r(nextLine, "\n", &nextLine))){
-        offset = calculateLineNumbers(symbols, curLine, offset);
-    }
-    return symbols;
-}*/
-
 StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in first pass, so this pass is lazier
     char *codeCopy = (char *)malloc(strlen(inputCode));
     strcpy(codeCopy, inputCode);
@@ -63,7 +48,6 @@ StkPtr secondPass(char *inputCode, StkPtr symbols){ //Error checking is done in 
 StkPtr firstPass(char *inputCode){
     char *codeCopy = (char *)malloc(strlen(inputCode));
     strcpy(codeCopy, inputCode);
-
     StkPtr symbols = newStk();
     char *curLine, *nextLine;
     int offset = 0;
@@ -71,14 +55,15 @@ StkPtr firstPass(char *inputCode){
     curLine = strtok_r(codeCopy, "\r\n", &nextLine);
     if(parseLine(curLine, symbols) == NULL)
         return NULL;
+
     offset = calculateLineNumbers(symbols, curLine, offset);
 
     while((curLine = strtok_r(nextLine, "\r\n", &nextLine))){
         if(parseLine(curLine, symbols) == NULL)
             return NULL;
+
         offset = calculateLineNumbers(symbols, curLine, offset);
     }
-
     return symbols;
 }
 
@@ -258,10 +243,7 @@ StkPtr parseLine(char *instrline, StkPtr symbols){
     }
     else if(strcmp(instruction, "call")==0){
         token = strtok(NULL, " "); //This is the line number we're on
-   /*     char branchCommand[] = "4000";
-        char *nextLineAddr = longToString(getNextLineAddress(symbols, token));
-        strcpy(branchCommand+2, nextLineAddr); //This copies the token into the last two zeros (assuming it's two chars long!)
-        */
+
         if(token){
             if((garbage = strtok(NULL, " "))){
                 printf("Extra symbols (%s) detected after call statement!\n", garbage);
@@ -278,6 +260,7 @@ StkPtr parseLine(char *instrline, StkPtr symbols){
 
                 //This placeholder is added so that it can be updated in the second pass
                 //as well as to give the line numbers the proper offset.
+                //This is a pretty bad kludge tbh, not sure what a better option is at this point.
                 char branchName[] = "BRANCH";
                 int brID = 0;
                 strcpy(branchName+6, longToString(brID));
@@ -307,6 +290,7 @@ StkPtr parseLine(char *instrline, StkPtr symbols){
     printf("This shouldn't happen!\n");
     return NULL;
 }
+
 //These are meant to be used on a StkPtr full of SymPtr's
 int getHighestAddress(StkPtr stk, char type){
     if(stk == NULL)
@@ -429,7 +413,9 @@ int parseMathIntoSymbols(StkPtr symbols, char *math){
 }
 
 int calculateLineNumbers(StkPtr symbols, char *curLine, int offset){
-    char *lineNum = strtok(curLine, " ");
+    char *lineCopy = (char *)malloc(strlen(curLine));
+    strcpy(lineCopy, curLine);
+    char *lineNum = strtok(lineCopy, " ");
     char *instruction = strtok(NULL, " ");
     char *leftMath, *rightMath, *op;
 
@@ -485,8 +471,7 @@ int getNextLineAddress(StkPtr symbols, char *curLineNum){
     return 0;
 }
 
-//If oldSym matches the initial chars of a symbol, the first such matching symbol is replaced with newSym.
-//Very handy for replacing branch placeholder symbols like "BRANCH0", "BRANCH1", etc. with appropriate branching constants
+
 int replaceSymbol(StkPtr symbols, char *oldSym, char *newSym, char type){
     SymPtr symptr;
     int oldSymLen = strlen(oldSym);
